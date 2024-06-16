@@ -7,10 +7,10 @@ def main():
 
     server_socket = socket.create_server(("localhost", 6379), reuse_port=True)
     server_socket.listen(5)
+    print("server listening")
 
     while True:
         print("check 1")
-        server_socket.listen(5)
         client, addr = server_socket.accept()
         print("check 2")
         data = client.recv(1024)
@@ -18,7 +18,6 @@ def main():
         if data == b'*1\r\n$4\r\nPING\r\n':
             client.send(b"+PONG\r\n")
 
-        time.sleep(3)
         # client.close()
 
     # server_socket.close()

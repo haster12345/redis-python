@@ -5,7 +5,7 @@ def main():
     print("Logs from your program will appear here!")
 
     server_socket = socket.create_server(("localhost", 6379), reuse_port=True)
-    server_socket.listen(1)
+    # server_socket.listen(1)
 
     while True:
         print("check")

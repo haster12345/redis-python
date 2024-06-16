@@ -10,7 +10,7 @@ def main():
     while True:
         client, addr = server_socket.accept()
         data = client.recv(1024)
-        print("check")
+        print(data)
         if data == b'*1\r\n$4\r\nPING\r\n':
             client.send(b"+PONG\r\n")
 

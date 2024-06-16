@@ -14,7 +14,7 @@ def main():
     print("check2")
     data = client.recv(1024)
     print(data)
-    if data == "PING":
+    if data == b'*1\r\n$4\r\nPING\r\n':
         print("data recieved")
         client.send(b"+PONG\r\n")
 

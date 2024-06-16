@@ -15,7 +15,7 @@ def main():
             client.send(b"+PONG\r\n")
 
         print("check")
-        server_socket.listen(1)
+        server_socket.listen(2)
 
     client.close()
     server_socket.close()

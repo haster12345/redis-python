@@ -14,6 +14,7 @@ def main():
         if data == b'*1\r\n$4\r\nPING\r\n':
             client.send(b"+PONG\r\n")
 
+        server_socket.listen(1)
 
     print("check")
     client.close()

@@ -11,6 +11,7 @@ def main():
         print("check")
         # server_socket.listen(1)
         client, addr = server_socket.accept()
+        print("check2")
         data = client.recv(1024)
         print(data)
         if data == b'*1\r\n$4\r\nPING\r\n':

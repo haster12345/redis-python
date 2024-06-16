@@ -14,6 +14,7 @@ def main():
     print("check2")
     data = client.recv(1024)
     if data == "PING":
+        print("data recieved")
         client.send(b"+PONG\r\n")
 
     client.close()

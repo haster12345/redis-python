@@ -7,9 +7,8 @@ def main():
     server_socket = socket.create_server(("localhost", 6379), reuse_port=True)
     server_socket.accept() # wait for client
     client, addr = server_socket.accept()
-
+    print("check1")
     data = client.recv(1024)
-    print("data recived %s" % data)
     if data == "PING":
         print(1)
         client.send(b"+PONG\r\n")

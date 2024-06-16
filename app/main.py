@@ -9,7 +9,9 @@ def main():
     server_socket.listen(1)
 
     while True:
+        print("check1")
         client, addr = server_socket.accept()
+        print("check2")
         data = client.recv(1024)
         if data == "PING":
             print(1)

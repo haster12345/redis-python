@@ -8,12 +8,11 @@ def main():
     server_socket.accept() # wait for client
     client, addr = server_socket.accept()
 
-    while True:
-        data = client.recv(1024)
-        print("data recived %s" % data)
-        if data == "PING":
-            print(1)
-            client.send(b"+PONG\r\n")
+    data = client.recv(1024)
+    print("data recived %s" % data)
+    if data == "PING":
+        print(1)
+        client.send(b"+PONG\r\n")
 
     client.close()
     server_socket.close()

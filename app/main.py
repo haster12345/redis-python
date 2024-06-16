@@ -13,6 +13,7 @@ def main():
     client, addr = server_socket.accept()
     print("check2")
     data = client.recv(1024)
+    print(data)
     if data == "PING":
         print("data recieved")
         client.send(b"+PONG\r\n")

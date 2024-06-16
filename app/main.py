@@ -11,6 +11,7 @@ def main():
     while True:
         data = client.recv(1024)
         if data == "PING":
+            print(1)
             client.send(b"+PONG\r\n")
 
     client.close()

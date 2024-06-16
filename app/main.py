@@ -9,13 +9,13 @@ def main():
 
     while True:
         print("check")
+        server_socket.listen(1)
         client, addr = server_socket.accept()
         data = client.recv(1024)
         print(data)
         if data == b'*1\r\n$4\r\nPING\r\n':
             client.send(b"+PONG\r\n")
 
-        server_socket.listen(1)
 
     client.close()
     server_socket.close()

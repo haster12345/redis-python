@@ -9,7 +9,7 @@ def main():
 
     while True:
         print("check")
-        # server_socket.listen(1)
+        server_socket.listen(5)
         client, addr = server_socket.accept()
         print("check2")
         data = client.recv(1024)

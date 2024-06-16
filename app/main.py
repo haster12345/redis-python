@@ -8,10 +8,10 @@ def main():
     server_socket.listen(5)
 
     while True:
-        print("check")
+        print("check 1")
         server_socket.listen(5)
         client, addr = server_socket.accept()
-        print("check2")
+        print("check 2")
         data = client.recv(1024)
         print(data)
         if data == b'*1\r\n$4\r\nPING\r\n':

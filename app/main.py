@@ -1,4 +1,5 @@
 import socket
+import time
 
 
 def main():
@@ -17,6 +18,7 @@ def main():
         if data == b'*1\r\n$4\r\nPING\r\n':
             client.send(b"+PONG\r\n")
 
+        time.sleep(3)
         # client.close()
 
     # server_socket.close()

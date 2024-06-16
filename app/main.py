@@ -13,6 +13,8 @@ def main():
         if data == b'*1\r\n$4\r\nPING\r\n':
             client.send(b"+PONG\r\n")
 
+
+    print("check")
     client.close()
     server_socket.close()
 

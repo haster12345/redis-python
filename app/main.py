@@ -8,6 +8,8 @@ def main():
     server_socket.accept() # wait for client
     client, addr = server_socket.accept()
     client.send(b"+PONG\r\n")
+    client.close()
+    server_socket.close()
 
 
 if __name__ == "__main__":

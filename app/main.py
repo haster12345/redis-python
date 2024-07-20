@@ -1,6 +1,7 @@
 import socket
 import time
 import threading
+from typing import List
 
 
 def main():
@@ -18,8 +19,51 @@ def main():
 def handle_client(client_socket):
     while True:
         data = client_socket.recv(1024)
-        if data == b'*1\r\n$4\r\nPING\r\n':
+        data_parse = parse_resp(data)
+
+        assert data_parse
+
+        if data_parse[0] == 'PING':
             client_socket.send(b"+PONG\r\n")
+
+        elif data_parse[0] == 'ECHO':
+            print("$%s\r\n%s\r\n" % (len(data_parse[1]), data_parse[1]))
+            client_socket.send(b"$%s\r\n%s\r\n" % (str.encode(f"{len(data_parse[1])}"), str.encode(data_parse[1])))
+        else:
+            assert "Not Implemented"
+
+
+def parse_resp(data):
+        str_data = data.decode('utf-8')
+        if data == '*1\r\n$4\r\nPING\r\n':
+           return ['PING']
+
+        if str_data[0] == '*':
+            parsed_array_out = parse_array(str_data)
+            return parsed_array_out
+
+        elif str_data[0] == '$':
+            parsed_str = parse_bulk_str(str_data)
+            return parsed_str
+        else:
+            assert "Not Implemented"
+
+
+def parse_array(data):
+    data_split = data.split('\r\n')
+    n_elements = int(data_split[0][1:])
+    return [data_split[2*(i+1)] for i in range(n_elements)]
+
+
+def parse_int():
+    pass
+
+
+def parse_bulk_str(data):
+    """
+    $<length>\r\n<data>\r\n
+    """
+    pass
 
 
 if __name__ == "__main__":

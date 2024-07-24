@@ -16,6 +16,7 @@ def main():
         client_handler = threading.Thread(target=handle_client, args=(client, ))
         client_handler.start()
 
+
 def handle_client(client_socket):
     store = {}
     while True:
@@ -27,22 +28,34 @@ def handle_client(client_socket):
         if not data_parse:
             return
 
-        if data_parse[0] == 'PING':
+        if data_parse[0].lower() == 'ping':
             client_socket.send(b"+PONG\r\n")
 
-        elif data_parse[0] == 'ECHO':
+        elif data_parse[0].lower() == 'echo':
             print("$%s\r\n%s\r\n" % (len(data_parse[1]), data_parse[1]))
             client_socket.send(
                 b"$%s\r\n%s\r\n" %
-                (str.encode(f"{len(data_parse[1])}"), str.encode(data_parse[1]))
+                (
+                    str.encode(f"{len(data_parse[1])}"),
+                    str.encode(data_parse[1])
+                )
             )
 
-        elif data_parse[0] == 'SET':
-            store[data_parse[1]] = data_parse[2]
-            print(store)
-            client_socket.send(b"+OK\r\n")
+        elif data_parse[0].lower() == 'set':
+            try:
+                if data_parse[3].lower() == 'px':
+                    exp_time = time.time_ns() + int(data_parse[4]) * 10 ** 6
+                    print(exp_time)
+                    store[data_parse[1]] = (data_parse[2], exp_time)
+                    client_socket.send(b"+OK\r\n")
+                else:
+                   assert False, "Invalid Argument"
 
-        elif data_parse[0] == 'GET':
+            except IndexError:
+                store[data_parse[1]] = (data_parse[2], )
+                client_socket.send(b"+OK\r\n")
+
+        elif data_parse[0].lower() == 'get':
             value = get_value(key=data_parse[1], store=store)
 
             if value == "$-1\r\n":
@@ -51,11 +64,13 @@ def handle_client(client_socket):
             else:
                 client_socket.send(
                         b"$%s\r\n%s\r\n" %
-                        (str.encode(f"{len(value)}"), str.encode(value))
+                        (
+                            str.encode(f"{len(value)}"),
+                            str.encode(value)
+                        )
                     )
-
         else:
-            assert "Not Implemented"
+            assert False, "Invalid Command"
 
 
 def parse_resp(data):
@@ -80,23 +95,23 @@ def parse_array(data):
     return [data_split[2*(i+1)] for i in range(n_elements)]
 
 
-def parse_int():
-    pass
-
-
-def parse_bulk_str(data):
-    """
-    $<length>\r\n<data>\r\n
-    """
-    pass
-
-
 def get_value(key, store):
     try:
-        return str(store[key])
+        if len(store[key]) == 1:
+            return str(store[key][0])
+        else:
+            if time.time_ns() > store[key][1]:
+                print('delete time: ',time.time_ns())
+                store.pop(key)
+                return "$-1\r\n"
+            else:
+                return str(store[key][0])
     except KeyError:
         return "$-1\r\n"
 
+
+def parse_bulk_str(data):
+    pass
 
 if __name__ == "__main__":
     main()

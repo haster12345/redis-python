@@ -1,12 +1,15 @@
 import socket
 import time
 import threading
-from typing import List
+import sys
 
 
 def main():
     print("Logs from your program will appear here!")
-    server_socket = socket.create_server(("localhost", 6379), reuse_port=True)
+    if len(sys.argv) > 1:
+        server_socket = socket.create_server(("localhost", int(sys.argv[2])), reuse_port=True)
+    else:
+        server_socket = socket.create_server(("localhost", 6379), reuse_port=True)
     server_socket.listen(5)
     print("server listening")
 
@@ -45,7 +48,6 @@ def handle_client(client_socket):
             try:
                 if data_parse[3].lower() == 'px':
                     exp_time = time.time_ns() + int(data_parse[4]) * 10 ** 6
-                    print(exp_time)
                     store[data_parse[1]] = (data_parse[2], exp_time)
                     client_socket.send(b"+OK\r\n")
                 else:
@@ -101,7 +103,6 @@ def get_value(key, store):
             return str(store[key][0])
         else:
             if time.time_ns() > store[key][1]:
-                print('delete time: ',time.time_ns())
                 store.pop(key)
                 return "$-1\r\n"
             else:

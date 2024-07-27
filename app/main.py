@@ -7,7 +7,10 @@ import sys
 def main():
     print("Logs from your program will appear here!")
     if len(sys.argv) > 1:
-        server_socket = socket.create_server(("localhost", int(sys.argv[2])), reuse_port=True)
+        if sys.argv[1] == '--port':
+            server_socket = socket.create_server(("localhost", int(sys.argv[2])), reuse_port=True)
+        else:
+            assert False, "invalid argument"
     else:
         server_socket = socket.create_server(("localhost", 6379), reuse_port=True)
     server_socket.listen(5)
@@ -71,6 +74,11 @@ def handle_client(client_socket):
                             str.encode(value)
                         )
                     )
+
+        elif data_parse[0].lower() == "info":
+            if data_parse[1].lower() == "replication":
+                client_socket.send(b"$11\r\nrole:master\r\n")
+
         else:
             assert False, "Invalid Command"
 

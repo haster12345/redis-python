@@ -1,29 +1,26 @@
 import socket
+import argparse
 import time
 import threading
-import sys
 
 
-def main():
+def main(port, replicaoff):
     print("Logs from your program will appear here!")
-    if len(sys.argv) > 1:
-        if sys.argv[1] == '--port':
-            server_socket = socket.create_server(("localhost", int(sys.argv[2])), reuse_port=True)
-        else:
-            assert False, "invalid argument"
-    else:
-        server_socket = socket.create_server(("localhost", 6379), reuse_port=True)
+    server_socket = socket.create_server(("localhost", port), reuse_port=True)
+    if not replicaoff:
+        replicaoff = False
+
     server_socket.listen(5)
     print("server listening")
 
     while True:
         client, addr = server_socket.accept()
         print(f"Accepted connection from {addr}")
-        client_handler = threading.Thread(target=handle_client, args=(client, ))
+        client_handler = threading.Thread(target=handle_client, args=(client, replicaoff))
         client_handler.start()
 
 
-def handle_client(client_socket):
+def handle_client(client_socket, replicaoff):
     store = {}
     while True:
         data = client_socket.recv(1024)
@@ -54,10 +51,10 @@ def handle_client(client_socket):
                     store[data_parse[1]] = (data_parse[2], exp_time)
                     client_socket.send(b"+OK\r\n")
                 else:
-                   assert False, "Invalid Argument"
+                    assert False, "Invalid Argument"
 
             except IndexError:
-                store[data_parse[1]] = (data_parse[2], )
+                store[data_parse[1]] = (data_parse[2],)
                 client_socket.send(b"+OK\r\n")
 
         elif data_parse[0].lower() == 'get':
@@ -68,41 +65,44 @@ def handle_client(client_socket):
 
             else:
                 client_socket.send(
-                        b"$%s\r\n%s\r\n" %
-                        (
-                            str.encode(f"{len(value)}"),
-                            str.encode(value)
-                        )
+                    b"$%s\r\n%s\r\n" %
+                    (
+                        str.encode(f"{len(value)}"),
+                        str.encode(value)
                     )
+                )
 
         elif data_parse[0].lower() == "info":
             if data_parse[1].lower() == "replication":
-                client_socket.send(b"$11\r\nrole:master\r\n")
+                if not replicaoff:
+                    client_socket.send(b"$11\r\nrole:master\r\n")
+                else:
+                    client_socket.send(b"$10\r\nrole:slave\r\n")
 
         else:
-            assert False, "Invalid Command"
+            assert False, "Unreachable"
 
 
 def parse_resp(data):
-        str_data = data.decode('utf-8')
-        if data == '*1\r\n$4\r\nPING\r\n':
-           return ['PING']
+    str_data = data.decode('utf-8')
+    if data == '*1\r\n$4\r\nPING\r\n':
+        return ['PING']
 
-        if str_data[0] == '*':
-            parsed_array_out = parse_array(str_data)
-            return parsed_array_out
+    if str_data[0] == '*':
+        parsed_array_out = parse_array(str_data)
+        return parsed_array_out
 
-        elif str_data[0] == '$':
-            parsed_str = parse_bulk_str(str_data)
-            return parsed_str
-        else:
-            assert "Not Implemented"
+    elif str_data[0] == '$':
+        parsed_str = parse_bulk_str(str_data)
+        return parsed_str
+    else:
+        assert "Unreachable"
 
 
 def parse_array(data):
     data_split = data.split('\r\n')
     n_elements = int(data_split[0][1:])
-    return [data_split[2*(i+1)] for i in range(n_elements)]
+    return [data_split[2 * (i + 1)] for i in range(n_elements)]
 
 
 def get_value(key, store):
@@ -122,5 +122,15 @@ def get_value(key, store):
 def parse_bulk_str(data):
     pass
 
+
 if __name__ == "__main__":
-    main()
+    port = 6379
+    replicaoff = None
+    parser = argparse.ArgumentParser(
+        description="Python REDIS"
+    )
+    parser.add_argument('--port', default=port, type=int)
+    parser.add_argument('--replicaoff', default=replicaoff, type=str)
+    args = parser.parse_args()
+
+    main(port=args.port, replicaoff=args.replicaoff)

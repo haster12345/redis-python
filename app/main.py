@@ -1,4 +1,5 @@
 import socket
+import secrets
 import argparse
 import time
 import threading
@@ -74,27 +75,22 @@ def handle_client(client_socket, replicaoff):
             if data_parse[1].lower() == "replication":
                 if not replicaoff:
 
-                    alpnum_string = "8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb"
+                    alpnum_string = secrets.token_hex(40)
+
+
                     role_resp = "role:master"
                     replid_resp = "master_replid:%s" % alpnum_string
                     repk_resp = "master_repl_offset:0"
 
-                    total_lenght = 0
 
-                    for i in [role_resp, replid_resp, repk_resp]:
-                        total_lenght += len(i.encode("utf-8"))
+                    value = "\r".join([role_resp, replid_resp, repk_resp])
+                    total_lenght = len(value.encode())
 
-                    print(total_lenght)
-                    # client_socket.send(b"$%s\r\n%s\r%s\r\n%s\r\n" %
-                    #     (
-                    #         str.encode(f"{total_lenght}"),
-                    #         str.encode(role_resp),
-                    #         str.encode(repk_resp),
-                    #         str.encode(replid_resp),
-                    #     )
-                    # )
-
-                    client_socket.send(str.encode(f"${total_lenght + 2}\r\n{role_resp}\r{repk_resp}\r{replid_resp}\r\n"))
+                    client_socket.send(
+                        str.encode(
+                            f"${total_lenght}\r\n{value}\r\n"
+                        )
+                    )
 
                 else:
                     client_socket.send(b"$10\r\nrole:slave\r\n")

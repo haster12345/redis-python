@@ -96,6 +96,7 @@ def handle_client(client_socket, replicaoff):
     while True:
         data = client_socket.recv(1024)
         data_parse = parse_resp(data)
+        print(data_parse)
 
         if not data_parse:
             return
@@ -138,8 +139,18 @@ def handle_client(client_socket, replicaoff):
             if data_parse[1].lower() == "replication":
                 info_replication(client_socket, replicaoff)
 
+        elif data_parse[0].lower() == "replconf":
+            if data_parse[1] == "listening-port":
+                rec_handshake(client_socket)
+            if data_parse[1] == "capa":
+                rec_handshake(client_socket)
+
         else:
             break
+
+
+def rec_handshake(socket: socket.socket):
+    socket.send(b"+OK\r\n")
 
 
 def parse_resp(data):

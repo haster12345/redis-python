@@ -6,11 +6,28 @@ import time
 import threading
 
 
-def handshake(host, port):
-    client = socket.create_connection((host, int(port)))
+def handshake(host, port, master_port):
+    port = int(port)
+    client = socket.create_connection((host, port))
     client.send(b"*1\r\n$4\r\nPING\r\n")
     addr = host
     print(f"Connected to Master {addr}")
+    while True:
+        data = client.recv(1024)
+        print(data)
+        if not data:
+            continue
+        elif data == b'+PONG\r\n':
+            client.send(
+                b"*3\r\n$8\r\nREPLCONF\r\n$14\r\nlistening-port\r\n$4\r\n%s\r\n"
+                % str.encode(f"{master_port}")
+            )
+            client.send(b"*3\r\n$8\r\nREPLCONF\r\n$4\r\ncapa\r\n$6\r\npsync2\r\n")
+            resp_1 = resp_2 = client.recv(1024)
+
+            if (resp_1 and resp_2) == b"+OK\r\n":
+                break
+
     return
 
 
@@ -27,7 +44,7 @@ def main(port: int, replicaoff: str):
     if replicaoff:
         replica_host, replica_port = replicaoff.split(" ")
         assert bool(replica_host and replica_port), "both replica host and replica port must be given"
-        handshake(replica_host, replica_port)
+        handshake(replica_host, replica_port, port)
 
     while True:
         client, addr = server_socket.accept()
@@ -125,7 +142,11 @@ def handle_client(client_socket, replicaoff):
 
 def parse_resp(data):
     str_data = data.decode('utf-8')
-    if data == '*1\r\n$4\r\nPING\r\n':
+
+    if not str_data:
+        return []
+
+    elif data == '*1\r\n$4\r\nPING\r\n':
         return ['PING']
 
     elif str_data[0] == '*':

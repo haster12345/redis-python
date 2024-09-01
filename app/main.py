@@ -1,24 +1,75 @@
 import socket
+from typing import Any
 import secrets
 import argparse
 import time
 import threading
 
 
-def main(port, replicaoff):
+def handshake(host, port):
+    client = socket.create_connection((host, int(port)))
+    client.send(b"*1\r\n$4\r\nPING\r\n")
+    addr = host
+    print(f"Connected to Master {addr}")
+    return
+
+
+def main(port: int, replicaoff: str):
     print("Logs from your program will appear here!")
     server_socket = socket.create_server(("localhost", port), reuse_port=True)
-    if not replicaoff:
-        replicaoff = False
 
     server_socket.listen(5)
     print("server listening")
+
+    if not server_socket:
+        return
+
+    if replicaoff:
+        replica_host, replica_port = replicaoff.split(" ")
+        assert bool(replica_host and replica_port), "both replica host and replica port must be given"
+        handshake(replica_host, replica_port)
 
     while True:
         client, addr = server_socket.accept()
         print(f"Accepted connection from {addr}")
         client_handler = threading.Thread(target=handle_client, args=(client, replicaoff))
         client_handler.start()
+
+
+def ping(socket: socket.socket):
+    socket.send(b"+PONG\r\n")
+    return
+
+
+def echo(socket: socket.socket, data:str):
+    socket.send(
+        b"$%s\r\n%s\r\n" %
+        (
+            str.encode(f"{len(data)}"),
+            str.encode(data)
+        )
+    )
+    return
+
+
+def info_replication(socket:socket.socket, replicaoff):
+    if not replicaoff:
+        alpnum_string = secrets.token_hex(40)
+        role_resp = "role:master"
+        replid_resp = "master_replid:%s" % alpnum_string
+        repk_resp = "master_repl_offset:0"
+
+        value = "\r".join([role_resp, replid_resp, repk_resp])
+        total_lenght = len(value.encode())
+
+        socket.send(
+            str.encode(
+                f"${total_lenght}\r\n{value}\r\n"
+            )
+        )
+
+    else:
+        socket.send(b"$10\r\nrole:slave\r\n")
 
 
 def handle_client(client_socket, replicaoff):
@@ -31,17 +82,10 @@ def handle_client(client_socket, replicaoff):
             return
 
         if data_parse[0].lower() == 'ping':
-            client_socket.send(b"+PONG\r\n")
+            ping(client_socket)
 
         elif data_parse[0].lower() == 'echo':
-            print("$%s\r\n%s\r\n" % (len(data_parse[1]), data_parse[1]))
-            client_socket.send(
-                b"$%s\r\n%s\r\n" %
-                (
-                    str.encode(f"{len(data_parse[1])}"),
-                    str.encode(data_parse[1])
-                )
-            )
+            echo(client_socket, data_parse[1])
 
         elif data_parse[0].lower() == 'set':
             try:
@@ -73,30 +117,10 @@ def handle_client(client_socket, replicaoff):
 
         elif data_parse[0].lower() == "info":
             if data_parse[1].lower() == "replication":
-                if not replicaoff:
-
-                    alpnum_string = secrets.token_hex(40)
-
-
-                    role_resp = "role:master"
-                    replid_resp = "master_replid:%s" % alpnum_string
-                    repk_resp = "master_repl_offset:0"
-
-
-                    value = "\r".join([role_resp, replid_resp, repk_resp])
-                    total_lenght = len(value.encode())
-
-                    client_socket.send(
-                        str.encode(
-                            f"${total_lenght}\r\n{value}\r\n"
-                        )
-                    )
-
-                else:
-                    client_socket.send(b"$10\r\nrole:slave\r\n")
+                info_replication(client_socket, replicaoff)
 
         else:
-            assert False, "Unreachable"
+            break
 
 
 def parse_resp(data):
@@ -104,13 +128,14 @@ def parse_resp(data):
     if data == '*1\r\n$4\r\nPING\r\n':
         return ['PING']
 
-    if str_data[0] == '*':
+    elif str_data[0] == '*':
         parsed_array_out = parse_array(str_data)
         return parsed_array_out
 
     elif str_data[0] == '$':
         parsed_str = parse_bulk_str(str_data)
         return parsed_str
+
     else:
         assert "Unreachable"
 
@@ -141,7 +166,7 @@ def parse_bulk_str(data):
 
 if __name__ == "__main__":
     port = 6379
-    replicaoff = None
+    replicaoff = ""
     parser = argparse.ArgumentParser(
         description="Python REDIS"
     )

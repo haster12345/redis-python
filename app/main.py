@@ -23,9 +23,11 @@ def handshake(host, port, master_port):
                 % str.encode(f"{master_port}")
             )
             client.send(b"*3\r\n$8\r\nREPLCONF\r\n$4\r\ncapa\r\n$6\r\npsync2\r\n")
-            resp_1 = resp_2 = client.recv(1024)
-
+            resp_1= client.recv(1024)
+            resp_2 = client.recv(1024)
+            print(resp_1, resp_2)
             if (resp_1 and resp_2) == b"+OK\r\n":
+                client.send(b"*3\r\n$5\r\nPSYNC\r\n$1\r\n?\r\n$2\r\n-1\r\n")
                 break
 
     return

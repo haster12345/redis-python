@@ -3,6 +3,7 @@ from typing import Any
 import secrets
 import argparse
 import time
+import base64
 import threading
 
 
@@ -147,23 +148,29 @@ def handle_client(client_socket, replicaoff):
 
         elif data_parse[0].lower() == "psync":
             psync(client_socket)
+
         else:
             break
 
 def psync(client: socket.socket):
-
     rep_id = "8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb"
-
     client.send(
         b"+FULLRESYNC %s 0\r\n" % str.encode(rep_id)
     )
+    empty_rdb_hex = "524544495330303131fa0972656469732d76657205372e322e30fa0a72656469732d62697473c040fa056374696d65c26d08bc65fa08757365642d6d656dc2b0c41000fa08616f662d62617365c000fff06e3bfec0ff5aa2"
+    rdb_content = bytes.fromhex(empty_rdb_hex)
+    rdb_data = f"${len(rdb_content)}\r\n".encode()
+    client.send(rdb_data + rdb_content)
 
 
 def rec_handshake_listening_port(socket: socket.socket, port):
     socket.send(b"+OK\r\n")
+    return
 
 def rec_handshake_capa(socket: socket.socket, capa):
     socket.send(b"+OK\r\n")
+    return
+
 
 
 def parse_resp(data):

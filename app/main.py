@@ -141,15 +141,28 @@ def handle_client(client_socket, replicaoff):
 
         elif data_parse[0].lower() == "replconf":
             if data_parse[1] == "listening-port":
-                rec_handshake(client_socket)
+                rec_handshake_listening_port(client_socket, data_parse[2])
             if data_parse[1] == "capa":
-                rec_handshake(client_socket)
+                rec_handshake_capa(client_socket, data_parse[2])
 
+        elif data_parse[0].lower() == "psync":
+            psync(client_socket)
         else:
             break
 
+def psync(client: socket.socket):
 
-def rec_handshake(socket: socket.socket):
+    rep_id = "8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb"
+
+    client.send(
+        b"+FULLRESYNC %s 0\r\n" % str.encode(rep_id)
+    )
+
+
+def rec_handshake_listening_port(socket: socket.socket, port):
+    socket.send(b"+OK\r\n")
+
+def rec_handshake_capa(socket: socket.socket, capa):
     socket.send(b"+OK\r\n")
 
 

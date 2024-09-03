@@ -69,7 +69,6 @@ class Store:
     def set_value(self, key: str, value: str, client: socket.socket, argument=None, px="", is_rep=False):
         if argument:
             if argument.lower() == 'px':
-                print(argument, px)
                 exp_time = time.time_ns() + int(px) * 10 ** 6
                 self.store[key] = (value, exp_time)
                 if not is_rep:
@@ -81,7 +80,6 @@ class Store:
             if not is_rep:
                 client.send(b"+OK\r\n")
 
-        print("reps = ", self.replicas)
         for replica_client in self.replicas:
             out_st = f"*3\r\n$3\r\nSET\r\n${len(key)}\r\n{key}\r\n${len(value)}\r\n{value}\r\n"
             replica_client.send(str.encode(out_st))
